@@ -1,3 +1,4 @@
+
 .DATA
 welcome_msg db 0Dh, 0Ah, "Welcome to Farmgate Metro Station", 0Dh, 0Ah, "$"
 menu db 0Dh, 0Ah, "Select Your Destination:", 0Dh, 0Ah
@@ -22,6 +23,9 @@ change_returned_msg db 0Dh, 0Ah, "Change to be returned: $"
 thank_you_msg db 0Dh, 0Ah, "Thank you :D !", 0Dh, 0Ah, "$"
 goodbye_msg db 0Dh, 0Ah, "Thank you for using Farmgate Metro Station! Goodbye!", 0Dh, 0Ah, "$"
 discount_msg db 0Dh, 0Ah, "Congratulations! You have earned a 5% discount on your total.", 0Dh, 0Ah, "$"
+tickets_left_msg db 0Dh, 0Ah, "Tickets left: $", 0Dh, 0Ah, "$"
+no_tickets_available_msg db 0Dh, 0Ah, "No tickets available.", 0Dh, 0Ah, "$"  ; Added message
+
 newline db 0Dh, 0Ah, "$"
 
 prices db 20, 30, 40, 50, 60, 70, 80, 90, 100  ; Prices for destinations
@@ -29,6 +33,7 @@ total dw 0               ; Total price (16-bit word)
 money_received dw 0      ; Amount of money received (16-bit word)
 change dw 0              ; Change to be returned (16-bit word)
 discount dw 0            ; Discount amount (16-bit word)
+tickets_available db 20  ; Total number of tickets available
 
 .CODE
 ReadNumber PROC
@@ -160,6 +165,24 @@ ticket_input:
     CMP CL, 20
     JG invalid_selection     
 
+    ; Check if enough tickets are available
+    MOV AL, [tickets_available]
+    CMP AL, CL
+    JL no_tickets_available
+
+    ; Decrease the number of available tickets
+    SUB [tickets_available], CL
+
+    ; Display the number of tickets left
+    LEA DX, tickets_left_msg
+    MOV AH, 09H
+    INT 21H
+    MOV AL, [tickets_available]
+    CALL DisplayNumber
+    LEA DX, newline
+    MOV AH, 09H
+    INT 21H
+
 calculate_total:
     MOV AL, BH              
     MUL CL                   
@@ -247,6 +270,12 @@ insufficient_money:
     INT 21H
     JMP menu_display
 
+no_tickets_available:
+    LEA DX, no_tickets_available_msg  
+    MOV AH, 09H
+    INT 21H
+    JMP menu_display
+
 invalid_selection:
     LEA DX, invalid_msg
     MOV AH, 09H
@@ -263,5 +292,7 @@ exit_program:
 
 MAIN ENDP
 END MAIN
+
+
 
 
